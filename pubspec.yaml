@@ -1,0 +1,31 @@
+name: relevapp
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^1.5.0
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.0.15
+  image_picker: ^1.0.4
+
+
+dependency_overrides:
+  sign_in_with_apple: ^7.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - images/logo.png
