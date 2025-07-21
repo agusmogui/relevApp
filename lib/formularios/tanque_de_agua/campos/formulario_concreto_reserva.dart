@@ -39,16 +39,16 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     _altoController = TextEditingController();
 
     _anchoController.addListener(() {
-      widget.formulario['ancho'] = _anchoController.text;
+      widget.formulario['reserva_ancho'] = _anchoController.text;
     });
     _largoController.addListener(() {
-      widget.formulario['largo'] = _largoController.text;
+      widget.formulario['reserva_largo'] = _largoController.text;
     });
     _altoController.addListener(() {
-      widget.formulario['alto'] = _altoController.text;
+      widget.formulario['reserva_alto'] = _altoController.text;
     });
     _observacionesController.addListener(() {
-      widget.formulario['observaciones'] = _observacionesController.text;
+      widget.formulario['reserva_observaciones'] = _observacionesController.text;
     });
   }
 
@@ -84,7 +84,7 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     if (foto != null) {
       setState(() {
         destino.add(foto);
-        widget.formulario[key] = destino.map((f) => f.path).toList();
+        widget.formulario['reserva_$key'] = destino.map((f) => f.path).toList();
       });
     }
   }
@@ -92,7 +92,7 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
   void _eliminarFoto(List<XFile> destino, int index, String key) {
     setState(() {
       destino.removeAt(index);
-      widget.formulario[key] = destino.map((f) => f.path).toList();
+      widget.formulario['reserva_$key'] = destino.map((f) => f.path).toList();
     });
   }
 
@@ -180,7 +180,7 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
           items: ['Tanza', 'Unidad sellada'],
           onChanged: (val) {
             setState(() => _automaticos = val);
-            widget.formulario['automaticos'] = val;
+            widget.formulario['reserva_automaticos'] = val;
           },
         ),
         const SizedBox(height: 24),

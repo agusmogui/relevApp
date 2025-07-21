@@ -80,7 +80,12 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
       ),
     );
   }
-
+  void limpiarCamposFormularioConPrefijo(Map<String, dynamic> formulario, String prefijo) {
+    final clavesABorrar = formulario.keys.where((key) => key.startsWith(prefijo)).toList();
+    for (final key in clavesABorrar) {
+    formulario.remove(key);
+    }
+  }  
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +124,12 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                         _buildDropdown(
                           label: 'Tipo de cisterna',
                           value: _tipoCisterna,
-                          onChanged: (value) => setState(() => _tipoCisterna = value),
+                          onChanged: (value) {
+                            setState(() {
+                              _tipoCisterna = value;
+                              limpiarCamposFormularioConPrefijo(datosFormulario, 'cisterna_');
+                            });
+                          },
                         ),
                         const SizedBox(height: 10),
                         if (_tipoCisterna == 'cilindrico')
@@ -147,7 +157,12 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                         _buildDropdown(
                           label: 'Tipo de reserva',
                           value: _tipoReserva,
-                          onChanged: (value) => setState(() => _tipoReserva = value),
+                          onChanged: (value) {
+                            setState(() {
+                              _tipoReserva = value;
+                              limpiarCamposFormularioConPrefijo(datosFormulario, 'reserva_');
+                            });
+                          },
                         ),
                         const SizedBox(height: 10),
                         if (_tipoReserva == 'cilindrico')
@@ -200,6 +215,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
       ),
     );
   }
+
 
   Widget _buildTextField(TextEditingController controller, String label, {bool obligatorio = false}) {
     return TextFormField(

@@ -41,16 +41,16 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
     _altoController = TextEditingController();
 
     _anchoController.addListener(() {
-      widget.formulario['ancho'] = _anchoController.text;
+      widget.formulario['cisterna_ancho'] = _anchoController.text;
     });
     _largoController.addListener(() {
-      widget.formulario['largo'] = _largoController.text;
+      widget.formulario['cisterna_largo'] = _largoController.text;
     });
     _altoController.addListener(() {
-      widget.formulario['alto'] = _altoController.text;
+      widget.formulario['cisterna_alto'] = _altoController.text;
     });
     _observacionesController.addListener(() {
-      widget.formulario['observaciones'] = _observacionesController.text;
+      widget.formulario['cisterna_observaciones'] = _observacionesController.text;
     });
   }
 
@@ -107,13 +107,13 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
     final rutas = destino.map((x) => x.path).toList();
 
     if (destino == _marcoYtapaLateral) {
-      widget.formulario['marco_tapa_lateral'] = rutas;
+      widget.formulario['cisterna_marco_tapa_lateral'] = rutas;
     } else if (destino == _tapaInspeccion) {
-      widget.formulario['tapa_inspeccion'] = rutas;
+      widget.formulario['cisterna_tapa_inspeccion'] = rutas;
     } else if (destino == _estadoParedes) {
-      widget.formulario['estado_paredes'] = rutas;
+      widget.formulario['cisterna_estado_paredes'] = rutas;
     } else if (destino == _colectora) {
-      widget.formulario['colectora'] = rutas;
+      widget.formulario['cisterna_colectora'] = rutas;
     }
   }
 
@@ -192,7 +192,7 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
           items: ['3/4\'\'', '1\'\'', '1 1/4\'\'', '1 1/2\'\''],
           onChanged: (val) {
             setState(() => _medidaFlotante = val);
-            widget.formulario['medida_flotante'] = val;
+            widget.formulario['cisterna_medida_flotante'] = val;
           },
         ),
         const SizedBox(height: 16),
@@ -202,7 +202,7 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
           items: ['Sí', 'No'],
           onChanged: (val) {
             setState(() => _pozoAchique = val);
-            widget.formulario['pozo_achique'] = val;
+            widget.formulario['cisterna_pozo_achique'] = val;
           },
         ),
         const SizedBox(height: 16),
@@ -217,7 +217,7 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
           ],
           onChanged: (val) {
             setState(() => _bombaAchique = val);
-            widget.formulario['bomba_achique'] = val;
+            widget.formulario['cisterna_bomba_achique'] = val;
           },
         ),
         const SizedBox(height: 16),
@@ -227,7 +227,7 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
           items: ['Sí', 'No'],
           onChanged: (val) {
             setState(() => _llaveCierre = val);
-            widget.formulario['llave_cierre'] = val;
+            widget.formulario['cisterna_llave_cierre'] = val;
           },
         ),
         const SizedBox(height: 24),
