@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 class FormularioCilindrico extends StatefulWidget {
   final Map<String, dynamic> data;
-  final String prefijo; // ej: "cisterna" o "reserva"
+  final String prefijo;
 
   const FormularioCilindrico({
     Key? key,
@@ -158,8 +158,9 @@ class _FormularioCilindricoState extends State<FormularioCilindrico> {
   }
 
   Widget _buildNumberField(String key, String label) {
+    final controller = TextEditingController(text: widget.data[key]?.toString() ?? '');
     return TextFormField(
-      initialValue: widget.data[key]?.toString() ?? '',
+      controller: controller,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
         labelText: label,
@@ -177,8 +178,9 @@ class _FormularioCilindricoState extends State<FormularioCilindrico> {
   }
 
   Widget _buildTextField(String key, String label, {bool obligatorio = true}) {
+    final controller = TextEditingController(text: widget.data[key]?.toString() ?? '');
     return TextFormField(
-      initialValue: widget.data[key]?.toString() ?? '',
+      controller: controller,
       maxLines: 3,
       decoration: InputDecoration(
         labelText: label,

@@ -80,12 +80,13 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
       ),
     );
   }
+
   void limpiarCamposFormularioConPrefijo(Map<String, dynamic> formulario, String prefijo) {
     final clavesABorrar = formulario.keys.where((key) => key.startsWith(prefijo)).toList();
     for (final key in clavesABorrar) {
-    formulario.remove(key);
+      formulario.remove(key);
     }
-  }  
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,33 +180,36 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B5E20),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B5E20),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.navigate_next, color: Colors.white),
+                        label: const Text(
+                          'Continuar',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            datosFormulario['direccion'] = _direccionController.text;
+                            datosFormulario['administracion'] = _administracionController.text;
+                            datosFormulario['encargado'] = _encargadoController.text;
+                            datosFormulario['contacto'] = _contactoController.text;
+                            datosFormulario['tipo_cisterna'] = _tipoCisterna;
+                            datosFormulario['tipo_reserva'] = _tipoReserva;
+                            _mostrarResumenFormulario(datosFormulario);
+                          }
+                        },
                       ),
-                    ),
-                    icon: const Icon(Icons.navigate_next),
-                    label: const Text(
-                      'Continuar',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // Guardar los datos generales en el Map
-                        datosFormulario['direccion'] = _direccionController.text;
-                        datosFormulario['administracion'] = _administracionController.text;
-                        datosFormulario['encargado'] = _encargadoController.text;
-                        datosFormulario['contacto'] = _contactoController.text;
-                        datosFormulario['tipo_cisterna'] = _tipoCisterna;
-                        datosFormulario['tipo_reserva'] = _tipoReserva;
-
-                        // Mostrar el contenido del Map en un diálogo
-                        _mostrarResumenFormulario(datosFormulario);
-                      }
-                    },
+                      SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),
+                    ],
                   ),
                 ],
               ),
@@ -215,7 +219,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
       ),
     );
   }
-
 
   Widget _buildTextField(TextEditingController controller, String label, {bool obligatorio = false}) {
     return TextFormField(

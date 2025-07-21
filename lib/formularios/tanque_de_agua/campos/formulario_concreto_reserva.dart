@@ -34,9 +34,11 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
   void initState() {
     super.initState();
 
-    _anchoController = TextEditingController();
-    _largoController = TextEditingController();
-    _altoController = TextEditingController();
+    _anchoController = TextEditingController(text: widget.formulario['reserva_ancho'] ?? '');
+    _largoController = TextEditingController(text: widget.formulario['reserva_largo'] ?? '');
+    _altoController = TextEditingController(text: widget.formulario['reserva_alto'] ?? '');
+    _observacionesController.text = widget.formulario['reserva_observaciones'] ?? '';
+    _automaticos = widget.formulario['reserva_automaticos'];
 
     _anchoController.addListener(() {
       widget.formulario['reserva_ancho'] = _anchoController.text;
@@ -50,7 +52,14 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     _observacionesController.addListener(() {
       widget.formulario['reserva_observaciones'] = _observacionesController.text;
     });
+
+    _marcoYtapaPrimaria.addAll((widget.formulario['reserva_marco_tapa_primaria'] ?? []).map<XFile>((e) => XFile(e)));
+    _marcoYtapaSecundaria.addAll((widget.formulario['reserva_marco_tapa_secundaria'] ?? []).map<XFile>((e) => XFile(e)));
+    _tapaInspeccion.addAll((widget.formulario['reserva_tapa_inspeccion'] ?? []).map<XFile>((e) => XFile(e)));
+    _estadoParedes.addAll((widget.formulario['reserva_estado_paredes'] ?? []).map<XFile>((e) => XFile(e)));
+    _colectora.addAll((widget.formulario['reserva_colectora'] ?? []).map<XFile>((e) => XFile(e)));
   }
+
 
   Future<void> _agregarFoto(List<XFile> destino, int maxFotos, String key) async {
     if (destino.length >= maxFotos) return;

@@ -36,9 +36,36 @@ class _FormularioCisternaState extends State<FormularioCisterna> {
   void initState() {
     super.initState();
 
-    _anchoController = TextEditingController();
-    _largoController = TextEditingController();
-    _altoController = TextEditingController();
+    _anchoController = TextEditingController(text: widget.formulario['cisterna_ancho'] ?? '');
+    _largoController = TextEditingController(text: widget.formulario['cisterna_largo'] ?? '');
+    _altoController = TextEditingController(text: widget.formulario['cisterna_alto'] ?? '');
+    _observacionesController.text = widget.formulario['cisterna_observaciones'] ?? '';
+
+    _medidaFlotante = widget.formulario['cisterna_medida_flotante'];
+    _pozoAchique = widget.formulario['cisterna_pozo_achique'];
+    _bombaAchique = widget.formulario['cisterna_bomba_achique'];
+    _llaveCierre = widget.formulario['cisterna_llave_cierre'];
+
+    if (widget.formulario['cisterna_marco_tapa_lateral'] != null) {
+      _marcoYtapaLateral.addAll(
+        (widget.formulario['cisterna_marco_tapa_lateral'] as List).map((path) => XFile(path)),
+      );
+    }
+    if (widget.formulario['cisterna_tapa_inspeccion'] != null) {
+      _tapaInspeccion.addAll(
+        (widget.formulario['cisterna_tapa_inspeccion'] as List).map((path) => XFile(path)),
+      );
+    }
+    if (widget.formulario['cisterna_estado_paredes'] != null) {
+      _estadoParedes.addAll(
+        (widget.formulario['cisterna_estado_paredes'] as List).map((path) => XFile(path)),
+      );
+    }
+    if (widget.formulario['cisterna_colectora'] != null) {
+      _colectora.addAll(
+        (widget.formulario['cisterna_colectora'] as List).map((path) => XFile(path)),
+      );
+    }
 
     _anchoController.addListener(() {
       widget.formulario['cisterna_ancho'] = _anchoController.text;
