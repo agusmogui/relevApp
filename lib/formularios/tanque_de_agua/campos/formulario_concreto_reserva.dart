@@ -121,7 +121,6 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
             if (!obligatorio)
               const Padding(
                 padding: EdgeInsets.only(left: 8),
-                child: Text('(opcional)', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
               )
           ],
         ),
@@ -262,6 +261,7 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     required String? value,
     required List<String> items,
     required void Function(String?) onChanged,
+    
   }) {
     return DropdownButtonFormField<String>(
       value: value,

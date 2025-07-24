@@ -14,7 +14,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.0.15
   image_picker: ^1.0.4
-
+  signature: ^5.4.0
+  path_provider: ^2.1.1
 
 dependency_overrides:
   sign_in_with_apple: ^7.0.1

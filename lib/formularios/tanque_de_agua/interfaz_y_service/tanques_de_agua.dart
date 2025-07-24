@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../campos/formulario_cilindricos.dart';
 import '../campos/formulario_concreto_cisterna.dart';
 import '../campos/formulario_concreto_reserva.dart';
+import 'dialogo_de_firma.dart';
 
 class TanquesDeAguaScreen extends StatefulWidget {
   final Map<String, dynamic> empresa;
@@ -14,18 +15,18 @@ class TanquesDeAguaScreen extends StatefulWidget {
 
 class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   final _formKey = GlobalKey<FormState>();
-
   // Formulario acumulador
   final Map<String, dynamic> datosFormulario = {};
-
+  
   // Datos generales
   final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _administracionController = TextEditingController();
   final TextEditingController _encargadoController = TextEditingController();
   final TextEditingController _contactoController = TextEditingController();
+  final TextEditingController _tecnicoController = TextEditingController();
 
-  bool _cisternaExpandida = false;
-  bool _reservaExpandida = false;
+  bool _cisternaExpandida = true;
+  bool _reservaExpandida = true;
 
   String? _tipoCisterna;
   String? _tipoReserva;
@@ -35,51 +36,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
     'concreto': 'Concreto',
     'no_tiene': 'No tiene',
   };
-
-  void _mostrarResumenFormulario(Map<String, dynamic> datos) {
-    final List<Widget> items = [];
-
-    datos.forEach((key, value) {
-      if (value is List) {
-        items.add(
-          Text(
-            '$key: 🖼️ ${value.length} fotos',
-            style: const TextStyle(fontSize: 16),
-          ),
-        );
-      } else {
-        items.add(
-          Text(
-            '$key: $value',
-            style: const TextStyle(fontSize: 16),
-          ),
-        );
-      }
-      items.add(const Divider());
-    });
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Resumen del formulario'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: items,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void limpiarCamposFormularioConPrefijo(Map<String, dynamic> formulario, String prefijo) {
     final clavesABorrar = formulario.keys.where((key) => key.startsWith(prefijo)).toList();
@@ -105,6 +61,8 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _buildTextField(_tecnicoController, 'Técnico responsable', obligatorio: true),
+                  const SizedBox(height: 16),
                   _buildTextField(_direccionController, 'Dirección', obligatorio: true),
                   const SizedBox(height: 16),
                   _buildTextField(_administracionController, 'Administración'),
@@ -131,6 +89,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                               limpiarCamposFormularioConPrefijo(datosFormulario, 'cisterna_');
                             });
                           },
+                          obligatorio: true,
                         ),
                         const SizedBox(height: 10),
                         if (_tipoCisterna == 'cilindrico')
@@ -164,6 +123,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                               limpiarCamposFormularioConPrefijo(datosFormulario, 'reserva_');
                             });
                           },
+                          obligatorio: true,
                         ),
                         const SizedBox(height: 10),
                         if (_tipoReserva == 'cilindrico')
@@ -179,7 +139,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -196,17 +155,25 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                           'Continuar',
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
+                            datosFormulario['tecnico'] = _tecnicoController.text;
                             datosFormulario['direccion'] = _direccionController.text;
                             datosFormulario['administracion'] = _administracionController.text;
                             datosFormulario['encargado'] = _encargadoController.text;
                             datosFormulario['contacto'] = _contactoController.text;
                             datosFormulario['tipo_cisterna'] = _tipoCisterna;
                             datosFormulario['tipo_reserva'] = _tipoReserva;
-                            _mostrarResumenFormulario(datosFormulario);
+
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) {
+                                return DialogoFirmaEncargado(formulario: datosFormulario);
+                              },
+                            );
                           }
-                        },
+                        }
                       ),
                       SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),
                     ],
@@ -239,6 +206,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
     required String label,
     required String? value,
     required Function(String?) onChanged,
+    bool obligatorio = false,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
@@ -255,8 +223,12 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
         );
       }).toList(),
       onChanged: onChanged,
+      validator: obligatorio
+          ? (val) => val == null ? 'Este campo es obligatorio' : null
+          : null,
     );
   }
+
 
   Widget _buildAcordeon({
     required String titulo,
