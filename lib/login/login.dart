@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_service.dart';
 import '../inicio/inicio.dart';
 
+
 class PantallaIngreso extends StatefulWidget {
   const PantallaIngreso({super.key});
 
@@ -54,11 +55,13 @@ class _PantallaIngresoState extends State<PantallaIngreso> {
         await prefs.setString('empresa_id', empresa['id_empresa'].toString());
         await prefs.setString('empresa_nombre', empresa['nombre_empresa'] ?? '');
         await prefs.setString('empresa_logo', empresa['logo_empresa'] ?? '');
+        await prefs.setString('clave_dueno',empresa['clave_dueno'] ?? '');
       } else {
         await prefs.remove('clave_empresa');
         await prefs.remove('empresa_id');
         await prefs.remove('empresa_nombre');
         await prefs.remove('empresa_logo');
+        await prefs.remove('clave_dueno');
       }
 
       // ✅ NAVEGACIÓN a pantalla de inicio

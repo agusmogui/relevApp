@@ -7,7 +7,7 @@ class LoginService {
     try {
       final data = await supabase
           .from('empresas')
-          .select('id_empresa, nombre_empresa, logo_empresa')
+          .select('id_empresa, nombre_empresa, logo_empresa,clave_dueno')
           .eq('clave_empresa', clave)
           .maybeSingle(); // devuelve null si no hay coincidencia
 
