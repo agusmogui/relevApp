@@ -6,8 +6,13 @@ import 'dialogo_de_firma.dart';
 
 class TanquesDeAguaScreen extends StatefulWidget {
   final Map<String, dynamic> empresa;
+  final Map<String, dynamic>? datosPrevios;
 
-  const TanquesDeAguaScreen({Key? key, required this.empresa}) : super(key: key);
+  const TanquesDeAguaScreen({
+    Key? key,
+    required this.empresa,
+    this.datosPrevios,
+  }) : super(key: key);
 
   @override
   State<TanquesDeAguaScreen> createState() => _TanquesDeAguaScreenState();
@@ -17,7 +22,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   final _formKey = GlobalKey<FormState>();
   // Formulario acumulador
   final Map<String, dynamic> datosFormulario = {};
-  
+
   // Datos generales
   final TextEditingController _direccionController = TextEditingController();
   final TextEditingController _administracionController = TextEditingController();
@@ -42,6 +47,42 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
     for (final key in clavesABorrar) {
       formulario.remove(key);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    print("MAPA QUE LLEGA A TANQUES:");
+    print(widget.datosPrevios); // <- esto lo ves siempre que entres
+
+    final datos = widget.datosPrevios;
+    if (datos != null) {
+      _tecnicoController.text = datos['tecnico'] ?? '';
+      _direccionController.text = datos['direccion'] ?? '';
+      _administracionController.text = datos['administracion'] ?? '';
+      _encargadoController.text = datos['encargado'] ?? '';
+      _contactoController.text = datos['contacto'] ?? '';
+
+      _tipoCisterna = datos['tipo_cisterna'];
+      _tipoReserva = datos['tipo_reserva'];
+
+      datosFormulario.addAll(datos);
+    }
+
+    // ⬇️ Esta línea la agregás acá
+    datosFormulario['id_empresa'] = widget.empresa['id_empresa'];
+  }
+
+
+  @override
+  void dispose() {
+    _direccionController.dispose();
+    _administracionController.dispose();
+    _encargadoController.dispose();
+    _contactoController.dispose();
+    _tecnicoController.dispose();
+    super.dispose();
   }
 
   @override
@@ -173,7 +214,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                               },
                             );
                           }
-                        }
+                        },
                       ),
                       SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),
                     ],
@@ -228,7 +269,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
           : null,
     );
   }
-
 
   Widget _buildAcordeon({
     required String titulo,

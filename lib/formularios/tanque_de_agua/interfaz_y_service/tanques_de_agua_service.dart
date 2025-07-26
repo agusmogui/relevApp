@@ -16,7 +16,8 @@ class TanqueAguaService {
         'administracion': formulario['administracion'],
         'direccion': formulario['direccion'],
         'contacto': formulario['contacto'],
-        'tecnico':formulario['tecnico']
+        'tecnico':formulario['tecnico'],
+        'id_empresa': formulario['id_empresa']
       };
 
       final response = await supabase

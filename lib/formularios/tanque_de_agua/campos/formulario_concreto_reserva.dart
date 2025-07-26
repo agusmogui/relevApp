@@ -33,12 +33,13 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
   @override
   void initState() {
     super.initState();
+    print('init reserva: largo=${widget.formulario['reserva_largo']}');
 
-    _anchoController = TextEditingController(text: widget.formulario['reserva_ancho'] ?? '');
-    _largoController = TextEditingController(text: widget.formulario['reserva_largo'] ?? '');
-    _altoController = TextEditingController(text: widget.formulario['reserva_alto'] ?? '');
-    _observacionesController.text = widget.formulario['reserva_observaciones'] ?? '';
-    _automaticos = widget.formulario['reserva_automaticos'];
+    _anchoController = TextEditingController(text: widget.formulario['reserva_ancho']?.toString() ?? '');
+    _largoController = TextEditingController(text: widget.formulario['reserva_largo']?.toString() ?? '');
+    _altoController = TextEditingController(text: widget.formulario['reserva_alto']?.toString() ?? '');
+    _observacionesController.text = widget.formulario['reserva_observaciones']?.toString() ?? '';
+    _automaticos = widget.formulario['reserva_automatico']?.toString();
 
     _anchoController.addListener(() {
       widget.formulario['reserva_ancho'] = _anchoController.text;
@@ -59,7 +60,6 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     _estadoParedes.addAll((widget.formulario['reserva_estado_paredes'] ?? []).map<XFile>((e) => XFile(e)));
     _colectora.addAll((widget.formulario['reserva_colectora'] ?? []).map<XFile>((e) => XFile(e)));
   }
-
 
   Future<void> _agregarFoto(List<XFile> destino, int maxFotos, String key) async {
     if (destino.length >= maxFotos) return;
@@ -118,10 +118,7 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
         Row(
           children: [
             Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
-            if (!obligatorio)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-              )
+            if (!obligatorio) const Padding(padding: EdgeInsets.only(left: 8)),
           ],
         ),
         const SizedBox(height: 8),
@@ -261,7 +258,6 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     required String? value,
     required List<String> items,
     required void Function(String?) onChanged,
-    
   }) {
     return DropdownButtonFormField<String>(
       value: value,

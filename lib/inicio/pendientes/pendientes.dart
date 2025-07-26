@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'pendientes_service.dart';
+import '../../formularios/tanque_de_agua/interfaz_y_service/tanques_de_agua.dart';
 
 class Pendientes extends StatefulWidget {
   final Map<String, dynamic> empresa;
@@ -17,6 +19,8 @@ class Pendientes extends StatefulWidget {
 
 class _PendientesState extends State<Pendientes> {
   bool _accesoPermitido = false;
+  List<Map<String, dynamic>> _relevamientos = [];
+  bool _cargando = true;
 
   @override
   void initState() {
@@ -31,6 +35,7 @@ class _PendientesState extends State<Pendientes> {
 
     if (yaPermitido) {
       setState(() => _accesoPermitido = true);
+      _cargarRelevamientos();
     } else {
       Future.delayed(Duration.zero, _mostrarDialogoContrasena);
     }
@@ -79,9 +84,20 @@ class _PendientesState extends State<Pendientes> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(clavePrefs, true);
       setState(() => _accesoPermitido = true);
+      _cargarRelevamientos();
     } else {
-      widget.onCancelar(); // <- 🔁 Cambia de pantalla/tab
+      widget.onCancelar();
     }
+  }
+
+  Future<void> _cargarRelevamientos() async {
+    setState(() => _cargando = true);
+    final idEmpresa = widget.empresa['id_empresa'];
+    final data = await PendientesService().obtenerRelevamientosDeEmpresa(idEmpresa);
+    setState(() {
+      _relevamientos = data;
+      _cargando = false;
+    });
   }
 
   @override
@@ -89,11 +105,124 @@ class _PendientesState extends State<Pendientes> {
     if (!_accesoPermitido) return const SizedBox();
 
     return Center(
-      child: Text(
-        'Aún no hay pendientes asignados para ${widget.empresa['nombre'] ?? 'esta empresa'}.',
-        style: const TextStyle(fontSize: 18),
-        textAlign: TextAlign.center,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(16),
+        child: _cargando
+            ? const CircularProgressIndicator()
+            : _relevamientos.isEmpty
+                ? Text(
+                    'Aún no hay pendientes asignados para ${widget.empresa['nombre'] ?? 'esta empresa'}.',
+                    style: const TextStyle(fontSize: 18),
+                    textAlign: TextAlign.center,
+                  )
+                : _buildListaAgrupada(),
       ),
+    );
+  }
+
+  Widget _buildListaAgrupada() {
+    final Map<String, List<Map<String, dynamic>>> agrupado = {};
+
+    for (final r in _relevamientos) {
+      final descripcion = r['descripcion_formulario'] ?? 'Otro';
+      if (!agrupado.containsKey(descripcion)) {
+        agrupado[descripcion] = [];
+      }
+      agrupado[descripcion]!.add(r);
+    }
+
+    return ListView(
+      shrinkWrap: true,
+      padding: const EdgeInsets.only(top: 40, bottom: 24),
+      children: agrupado.entries.map((entry) {
+        final titulo = entry.key;
+        final relevamientos = entry.value;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 12),
+              child: Center(
+                child: Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+            ...relevamientos.map((r) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Card(
+                    child: InkWell(
+                      onTap: () async {
+                        final idFormulario = r['id_formulario'];
+
+                        if (idFormulario == 1) {
+                          final idRelevamiento = r['id_relevamiento'];
+
+                          final relevamientoCompleto = await PendientesService().obtenerRelevamientoCompleto(idRelevamiento);
+                          if (relevamientoCompleto == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
+                            );
+                            return;
+                          }
+
+                          final datosPlano = PendientesService.transformarRelevamientoAFormulario(relevamientoCompleto);
+                          print(datosPlano);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TanquesDeAguaScreen(
+                                empresa: widget.empresa,
+                                datosPrevios: datosPlano,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Este formulario aún no está implementado')),
+                          );
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    r['direccion'] ?? 'Dirección desconocida',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text('Fecha: ${r['fecha'] ?? 'sin fecha'}'),
+                                  Text('Técnico: ${r['tecnico'] ?? 'sin técnico'}'),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+            const SizedBox(height: 24),
+          ],
+        );
+      }).toList(),
     );
   }
 }
