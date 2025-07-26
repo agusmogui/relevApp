@@ -165,7 +165,9 @@ class _PendientesState extends State<Pendientes> {
                         if (idFormulario == 1) {
                           final idRelevamiento = r['id_relevamiento'];
 
-                          final relevamientoCompleto = await PendientesService().obtenerRelevamientoCompleto(idRelevamiento);
+                          final service = PendientesService();
+                          final relevamientoCompleto = await service.obtenerRelevamientoCompleto(idRelevamiento);
+
                           if (relevamientoCompleto == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
@@ -173,23 +175,31 @@ class _PendientesState extends State<Pendientes> {
                             return;
                           }
 
-                          final datosPlano = PendientesService.transformarRelevamientoAFormulario(relevamientoCompleto);
-                          print(datosPlano);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TanquesDeAguaScreen(
-                                empresa: widget.empresa,
-                                datosPrevios: datosPlano,
+                          try {
+                            final datosPlano = await service.transformarRelevamientoConFotos(relevamientoCompleto);
+                            if (!mounted) return;
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TanquesDeAguaScreen(
+                                  empresa: widget.empresa,
+                                  datosPrevios: datosPlano,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error procesando las fotos: $e')),
+                            );
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Este formulario aún no está implementado')),
                           );
                         }
                       },
+
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(

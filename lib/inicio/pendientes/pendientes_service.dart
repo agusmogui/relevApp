@@ -1,9 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'fotoProvider.dart';
 
 class PendientesService {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // 🔹 Obtener relevamientos por empresa + firma del encargado + descripción del formulario
   Future<List<Map<String, dynamic>>> obtenerRelevamientosDeEmpresa(int idEmpresa) async {
     try {
       final data = await supabase
@@ -147,7 +147,8 @@ class PendientesService {
     };
   }
 
-  static Map<String, dynamic> transformarRelevamientoAFormulario(Map<String, dynamic> relevamiento) {
+  // 🔹 Versión original que devuelve textos y fotos en URLs
+  Map<String, dynamic> transformarRelevamientoAFormularioPlano(Map<String, dynamic> relevamiento) {
     final Map<String, dynamic> datos = {};
 
     datos['direccion'] = relevamiento['direccion'];
@@ -175,19 +176,29 @@ class PendientesService {
         continue;
       }
 
-      // Detalle (si existe)
       if (detalle is Map<String, dynamic>) {
         detalle.forEach((clave, valor) {
           datos['${prefijo}_$clave'] = valor;
         });
       }
 
-      // Fotos
       fotos.forEach((campo, urls) {
-        datos['${prefijo}_$campo'] = List<String>.from(urls);
+        datos[campo] = List<String>.from(urls);
       });
     }
-
     return datos;
+  }
+
+  // 🔹 Nueva versión que descarga las fotos y devuelve campos con XFile
+  Future<Map<String, dynamic>> transformarRelevamientoConFotos(Map<String, dynamic> relevamiento) async {
+    final plano = transformarRelevamientoAFormularioPlano(relevamiento);
+    final fotoProvider = FotoProvider();
+    await fotoProvider.cargar(plano);
+
+    if (fotoProvider.formulario == null) {
+      throw Exception('❌ No se pudo transformar el relevamiento con fotos: ${fotoProvider.error}');
+    }
+
+    return fotoProvider.formulario!;
   }
 }
