@@ -126,7 +126,7 @@ class TanqueAguaService {
 
   Future<int?> insertarTanque({
     required int idRelevamiento,
-    required int idDetalle,
+    int? idDetalle,
     required String tipoTanque, // 'cisterna' o 'reserva'
     required String keyTipoEstructura, // 'tipo_cisterna' o 'tipo_reserva'
   }) async {
@@ -135,7 +135,7 @@ class TanqueAguaService {
         'id_relevamiento': idRelevamiento,
         'tipo_tanque': tipoTanque,
         'tipo_estructura': formulario[keyTipoEstructura],
-        'id_formulario_detalle': idDetalle,
+        if (idDetalle != null) 'id_formulario_detalle': idDetalle,
       };
 
       final response = await supabase
@@ -150,6 +150,7 @@ class TanqueAguaService {
       return null;
     }
   }
+
 
   Future<void> subirFotosDeCampo({
     required List<XFile> fotos,
@@ -236,15 +237,17 @@ class TanqueAguaService {
   }
 }
 
-
   Future<void> cargarRelevamientoCompleto() async {
     // Paso 1: Insertar relevamiento general
     final idRelevamiento = await insertarRelevamiento();
     if (idRelevamiento == null) return;
 
     // === CISTERNA ===
-    final idDetalleCisterna = await insertarDetalleCisterna();
-    if (idDetalleCisterna == null) return;
+    int? idDetalleCisterna;
+    if (formulario['tipo_cisterna'] != 'no_tiene') {
+      idDetalleCisterna = await insertarDetalleCisterna();
+      if (idDetalleCisterna == null) return;
+    }
 
     final idTanqueCisterna = await insertarTanque(
       idRelevamiento: idRelevamiento,
@@ -286,8 +289,11 @@ class TanqueAguaService {
     }
 
     // === RESERVA ===
-    final idDetalleReserva = await insertarDetalleReserva();
-    if (idDetalleReserva == null) return;
+    int? idDetalleReserva;
+    if (formulario['tipo_reserva'] != 'no_tiene') {
+      idDetalleReserva = await insertarDetalleReserva();
+      if (idDetalleReserva == null) return;
+    }
 
     final idTanqueReserva = await insertarTanque(
       idRelevamiento: idRelevamiento,
@@ -341,5 +347,6 @@ class TanqueAguaService {
 
     print('✅ Relevamiento completo cargado con éxito.');
   }
+
 
 }

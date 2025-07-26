@@ -14,14 +14,12 @@ class PendientesService {
       List<Map<String, dynamic>> relevamientos = List<Map<String, dynamic>>.from(data);
 
       for (var relevamiento in relevamientos) {
-        // Agregar descripción del formulario de forma plana
         final descripcionFormulario = relevamiento['formularios']?['descripcion'] ?? 'Sin descripción';
         relevamiento['descripcion_formulario'] = descripcionFormulario;
-        relevamiento.remove('formularios'); // opcional: para no tener estructura anidada innecesaria
+        relevamiento.remove('formularios');
 
-        // Agregar firma
         final firma = await obtenerFirmaEncargado(relevamiento['id_relevamiento']);
-        relevamiento['firma_encargado'] = firma?['url_firma']; // puede ser null
+        relevamiento['firma_encargado'] = firma?['url_firma'];
       }
 
       return relevamientos;
@@ -31,7 +29,6 @@ class PendientesService {
     }
   }
 
-  // 🔹 Obtener firma del encargado según el relevamiento
   Future<Map<String, dynamic>?> obtenerFirmaEncargado(int idRelevamiento) async {
     try {
       final data = await supabase
@@ -47,7 +44,6 @@ class PendientesService {
     }
   }
 
-  // 🔹 Obtener tanques + detalles + fotos
   Future<List<Map<String, dynamic>>> obtenerTanquesConDetalles(int idRelevamiento) async {
     try {
       final tanques = await supabase
@@ -69,7 +65,6 @@ class PendientesService {
     }
   }
 
-  // 🔹 Obtener todo el relevamiento completo con tanques y firma
   Future<Map<String, dynamic>?> obtenerRelevamientoCompleto(int idRelevamiento) async {
     try {
       final relevamiento = await supabase
@@ -103,29 +98,31 @@ class PendientesService {
     }
   }
 
-  // 🔹 Función interna para mapear un tanque completo
   Future<Map<String, dynamic>> _mapearTanque(Map<String, dynamic> tanque) async {
     final String tipoTanque = tanque['tipo_tanque'];
     final String tipoEstructura = tanque['tipo_estructura'];
-    final int idDetalle = tanque['id_formulario_detalle'];
+    final int? idDetalle = tanque['id_formulario_detalle'];
 
-    String? tabla;
-    if (tipoEstructura == 'cilindrico') {
-      tabla = 'tanque_cilindrico';
-    } else if (tipoEstructura == 'concreto' && tipoTanque == 'cisterna') {
-      tabla = 'cisterna_concreto';
-    } else if (tipoEstructura == 'concreto' && tipoTanque == 'reserva') {
-      tabla = 'reserva_concreto';
-    } else {
-      print('⛔ Tipo no reconocido: $tipoTanque / $tipoEstructura');
-      return {};
+    Map<String, dynamic>? detalle;
+
+    if (idDetalle != null) {
+      String? tabla;
+      if (tipoEstructura == 'cilindrico') {
+        tabla = 'tanque_cilindrico';
+      } else if (tipoEstructura == 'concreto' && tipoTanque == 'cisterna') {
+        tabla = 'cisterna_concreto';
+      } else if (tipoEstructura == 'concreto' && tipoTanque == 'reserva') {
+        tabla = 'reserva_concreto';
+      }
+
+      if (tabla != null) {
+        detalle = await supabase
+            .from(tabla)
+            .select()
+            .eq('id_detalle', idDetalle)
+            .maybeSingle();
+      }
     }
-
-    final detalle = await supabase
-        .from(tabla)
-        .select()
-        .eq('id_detalle', idDetalle)
-        .maybeSingle();
 
     final fotos = await supabase
         .from('fotos')
@@ -153,7 +150,6 @@ class PendientesService {
   static Map<String, dynamic> transformarRelevamientoAFormulario(Map<String, dynamic> relevamiento) {
     final Map<String, dynamic> datos = {};
 
-    // Datos generales
     datos['direccion'] = relevamiento['direccion'];
     datos['tecnico'] = relevamiento['tecnico'];
     datos['encargado'] = relevamiento['encargado'];
@@ -163,9 +159,9 @@ class PendientesService {
     final tanques = relevamiento['tanques'] as List;
 
     for (final tanque in tanques) {
-      final tipo = tanque['tipo_tanque'];             // 'cisterna' o 'reserva'
-      final estructura = tanque['tipo_estructura'];   // 'cilindrico' o 'concreto'
-      final detalle = tanque['detalle'] as Map<String, dynamic>;
+      final tipo = tanque['tipo_tanque'];
+      final estructura = tanque['tipo_estructura'];
+      final detalle = tanque['detalle'];
       final fotos = tanque['fotos_por_campo'] as Map<String, dynamic>;
 
       String prefijo;
@@ -176,15 +172,17 @@ class PendientesService {
         prefijo = 'reserva';
         datos['tipo_reserva'] = estructura;
       } else {
-        continue; // salta si es un tipo desconocido
+        continue;
       }
 
-      // Agregar detalles con prefijo
-      detalle.forEach((clave, valor) {
-        datos['${prefijo}_$clave'] = valor;
-      });
+      // Detalle (si existe)
+      if (detalle is Map<String, dynamic>) {
+        detalle.forEach((clave, valor) {
+          datos['${prefijo}_$clave'] = valor;
+        });
+      }
 
-      // Agregar fotos con prefijo
+      // Fotos
       fotos.forEach((campo, urls) {
         datos['${prefijo}_$campo'] = List<String>.from(urls);
       });
@@ -192,5 +190,4 @@ class PendientesService {
 
     return datos;
   }
-
 }
