@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pendientes_service.dart';
 import '../../formularios/tanque_de_agua/interfaz_y_service/tanques_de_agua.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
 
 class Pendientes extends StatefulWidget {
   final Map<String, dynamic> empresa;
@@ -41,44 +43,47 @@ class _PendientesState extends State<Pendientes> {
     }
   }
 
-  Future<void> _mostrarDialogoContrasena() async {
-    final TextEditingController _controller = TextEditingController();
-    final String contrasenaCorrecta = widget.empresa['clave_dueno'] ?? '';
-    final String clavePrefs = 'acceso_permitido_${widget.empresa['id_empresa']}';
+Future<void> _mostrarDialogoContrasena() async {
+  final TextEditingController _controller = TextEditingController();
+  final String contrasenaCorrecta = widget.empresa['clave_dueno'] ?? '';
+  final String clavePrefs = 'acceso_permitido_${widget.empresa['id_empresa']}';
 
-    final resultado = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text('Contraseña'),
-          content: TextField(
-            controller: _controller,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Ingrese la contraseña'),
+  final resultado = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8), // 🔲 Menos redondo
+        ),
+        title: const Text('Contraseña'),
+        content: TextField(
+          controller: _controller,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Ingrese la contraseña'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final ingreso = _controller.text;
-                if (ingreso == contrasenaCorrecta) {
-                  Navigator.pop(context, true);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Contraseña incorrecta')),
-                  );
-                }
-              },
-              child: const Text('Ingresar'),
-            ),
-          ],
-        );
-      },
-    );
+          ElevatedButton(
+            onPressed: () {
+              final ingreso = _controller.text;
+              if (ingreso == contrasenaCorrecta) {
+                Navigator.pop(context, true);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Contraseña incorrecta')),
+                );
+              }
+            },
+            child: const Text('Ingresar'),
+          ),
+        ],
+      );
+    },
+  );
 
     if (resultado == true) {
       final prefs = await SharedPreferences.getInstance();
@@ -133,72 +138,99 @@ class _PendientesState extends State<Pendientes> {
     }
 
     return ListView(
-      shrinkWrap: true,
-      padding: const EdgeInsets.only(top: 40, bottom: 24),
+      padding: const EdgeInsets.only(top: 8, bottom: 24),
       children: agrupado.entries.map((entry) {
-        final titulo = entry.key;
         final relevamientos = entry.value;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 12),
-              child: Center(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20), // verde oscuro
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Center(
                 child: Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                  'Relevamiento tanque de agua',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ),
+          ),
+
+
             ...relevamientos.map((r) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Card(
                     child: InkWell(
                       onTap: () async {
-                        final idFormulario = r['id_formulario'];
+                      final idFormulario = r['id_formulario'];
 
-                        if (idFormulario == 1) {
-                          final idRelevamiento = r['id_relevamiento'];
+                      if (idFormulario == 1) {
+                        final idRelevamiento = r['id_relevamiento'];
 
-                          final service = PendientesService();
-                          final relevamientoCompleto = await service.obtenerRelevamientoCompleto(idRelevamiento);
+                        // 🔄 Mostrar loader animado
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => Center(
+                            child: SpinKitFadingCircle( // o el que más te guste
+                              color: Colors.greenAccent,
+                              size: 60.0,
+                            ),
+                          ),
+                        );
 
-                          if (relevamientoCompleto == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
-                            );
-                            return;
-                          }
+                        final service = PendientesService();
+                        final relevamientoCompleto = await service.obtenerRelevamientoCompleto(idRelevamiento);
 
-                          try {
-                            final datosPlano = await service.transformarRelevamientoConFotos(relevamientoCompleto);
-                            if (!mounted) return;
+                        if (!mounted) return;
+                        Navigator.pop(context); // ❌ Cerrar loader
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TanquesDeAguaScreen(
-                                  empresa: widget.empresa,
-                                  datosPrevios: datosPlano,
-                                ),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error procesando las fotos: $e')),
-                            );
-                          }
-                        } else {
+                        if (relevamientoCompleto == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Este formulario aún no está implementado')),
+                            const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          final datosPlano = await service.transformarRelevamientoConFotos(relevamientoCompleto);
+                          datosPlano['id_relevamiento'] = idRelevamiento;
+                          datosPlano['id_empresa'] = widget.empresa['id_empresa'];
+
+                          if (!mounted) return;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TanquesDeAguaScreen(
+                                empresa: widget.empresa,
+                                datosPrevios: datosPlano,
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error procesando las fotos: $e')),
                           );
                         }
-                      },
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Este formulario aún no está implementado')),
+                        );
+                      }
+                    },
+
 
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -229,7 +261,7 @@ class _PendientesState extends State<Pendientes> {
                     ),
                   ),
                 )),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
           ],
         );
       }).toList(),

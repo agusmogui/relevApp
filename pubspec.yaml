@@ -16,6 +16,7 @@ dependencies:
   image_picker: ^1.0.4
   signature: ^5.4.0
   path_provider: ^2.1.1
+  flutter_spinkit: ^5.2.0
 
 dependency_overrides:
   sign_in_with_apple: ^7.0.1

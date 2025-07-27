@@ -3,6 +3,7 @@ import '../campos/formulario_cilindricos.dart';
 import '../campos/formulario_concreto_cisterna.dart';
 import '../campos/formulario_concreto_reserva.dart';
 import 'dialogo_de_firma.dart';
+import 'tanques_de_agua_service.dart';
 
 class TanquesDeAguaScreen extends StatefulWidget {
   final Map<String, dynamic> empresa;
@@ -36,6 +37,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   String? _tipoCisterna;
   String? _tipoReserva;
 
+
   final Map<String, String> opcionesTanque = {
     'cilindrico': 'Cilíndrico',
     'concreto': 'Concreto',
@@ -52,9 +54,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   @override
   void initState() {
     super.initState();
-
-    print("MAPA QUE LLEGA A TANQUES:");
-    print(widget.datosPrevios); // <- esto lo ves siempre que entres
 
     final datos = widget.datosPrevios;
     if (datos != null) {
@@ -130,6 +129,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                             });
                           },
                           obligatorio: true,
+                          enabled: widget.datosPrevios == null, // 👈 aquí desactivamos en edición
                         ),
                         const SizedBox(height: 10),
                         if (_tipoCisterna == 'cilindrico')
@@ -164,6 +164,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                             });
                           },
                           obligatorio: true,
+                          enabled: widget.datosPrevios == null, // 👈 aquí desactivamos en edición
                         ),
                         const SizedBox(height: 10),
                         if (_tipoReserva == 'cilindrico')
@@ -183,28 +184,43 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B5E20),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B5E20),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        icon: const Icon(Icons.navigate_next, color: Colors.white),
-                        label: const Text(
-                          'Continuar',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                        onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            datosFormulario['tecnico'] = _tecnicoController.text;
-                            datosFormulario['direccion'] = _direccionController.text;
-                            datosFormulario['administracion'] = _administracionController.text;
-                            datosFormulario['encargado'] = _encargadoController.text;
-                            datosFormulario['contacto'] = _contactoController.text;
-                            datosFormulario['tipo_cisterna'] = _tipoCisterna;
-                            datosFormulario['tipo_reserva'] = _tipoReserva;
+                      ),
+                      icon: const Icon(Icons.navigate_next, color: Colors.white),
+                      label: const Text(
+                        'Continuar',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          datosFormulario['tecnico'] = _tecnicoController.text;
+                          datosFormulario['direccion'] = _direccionController.text;
+                          datosFormulario['administracion'] = _administracionController.text;
+                          datosFormulario['encargado'] = _encargadoController.text;
+                          datosFormulario['contacto'] = _contactoController.text;
+                          datosFormulario['tipo_cisterna'] = _tipoCisterna;
+                          datosFormulario['tipo_reserva'] = _tipoReserva;
 
+                          if (widget.datosPrevios != null) {
+                            // 🟡 Modo edición → actualiza en Supabase directamente
+                          
+                            // ✅ Agregar el id_relevamiento directamente al formulario
+                            datosFormulario['id_relevamiento'] = widget.datosPrevios!['id_relevamiento'];
+                            datosFormulario['id_empresa'] = widget.datosPrevios!['id_empresa']; // por si lo necesita el update
+
+
+                            final service = TanqueAguaService(datosFormulario);
+                            await service.actualizarRelevamiento(datosFormulario);
+
+                            if (context.mounted) Navigator.pop(context); // volver atrás si fue exitoso
+
+                          } else {
+                            // 🟢 Modo nuevo → ir a firmar
                             showDialog(
                               context: context,
                               barrierDismissible: false,
@@ -213,8 +229,10 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                               },
                             );
                           }
-                        },
-                      ),
+                        }
+                      },
+                    ),
+
                       SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),
                     ],
                   ),
@@ -243,31 +261,46 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   }
 
   Widget _buildDropdown({
-    required String label,
-    required String? value,
-    required Function(String?) onChanged,
-    bool obligatorio = false,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: const Color(0xFFF1F1F1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      items: opcionesTanque.entries.map((entry) {
-        return DropdownMenuItem<String>(
-          value: entry.key,
-          child: Text(entry.value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      validator: obligatorio
-          ? (val) => val == null ? 'Este campo es obligatorio' : null
-          : null,
-    );
-  }
+  required String label,
+  required String? value,
+  required Function(String?) onChanged,
+  bool obligatorio = false,
+  bool enabled = true,
+}) {
+  return DropdownButtonFormField<String>(
+    value: value,
+    decoration: InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: const Color(0xFFF1F1F1),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    style: const TextStyle( // <-- Estilo forzado para todos los ítems visibles
+      color: Colors.black,
+      fontSize: 16,
+    ),
+    items: opcionesTanque.entries.map((entry) {
+      return DropdownMenuItem<String>(
+        value: entry.key,
+        child: Text(entry.value),
+      );
+     }).toList(),
+        onChanged: enabled ? onChanged : null,
+        disabledHint: value != null
+           ? Text(
+            opcionesTanque[value] ?? '',
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+            ),
+          )
+        : null,
+        validator: obligatorio
+        ? (val) => val == null ? 'Este campo es obligatorio' : null
+        : null,
+  );
+}
+
 
   Widget _buildAcordeon({
     required String titulo,

@@ -132,8 +132,6 @@ class _FormularioCilindricoState extends State<FormularioCilindrico> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Formulario Cilíndrico', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
         _buildNumberField('${p}_cantidad', 'Cantidad de tanques'),
         const SizedBox(height: 16),
         _buildNumberField('${p}_litros', 'Litros por tanque'),

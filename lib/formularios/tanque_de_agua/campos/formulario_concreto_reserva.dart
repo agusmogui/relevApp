@@ -171,8 +171,6 @@ class _FormularioReservaConcretoState extends State<FormularioReservaConcreto> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Formulario Reserva Concreto', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
         _buildNumberField(_anchoController, 'Ancho'),
         const SizedBox(height: 16),
         _buildNumberField(_largoController, 'Largo'),

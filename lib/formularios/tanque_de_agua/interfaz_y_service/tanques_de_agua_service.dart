@@ -348,5 +348,136 @@ class TanqueAguaService {
     print('✅ Relevamiento completo cargado con éxito.');
   }
 
+Future<void> actualizarRelevamiento(Map<String, dynamic> datos) async {
+  final supabase = Supabase.instance.client;
 
+  if (datos['id_relevamiento'] == null) {
+    throw Exception('El id_relevamiento es null y es necesario para actualizar');
+  }
+
+  try {
+    final int idRelevamiento = datos['id_relevamiento'];
+
+    // 🟠 1. Actualizar datos generales del relevamiento
+    final mapaGenerico = {
+      'direccion': datos['direccion'],
+      'encargado': datos['encargado'],
+      'administracion': datos['administracion'],
+      'contacto': datos['contacto'],
+      'tecnico': datos['tecnico'],
+    };
+
+    await supabase
+        .from('relevamientos')
+        .update(mapaGenerico)
+        .eq('id_relevamiento', idRelevamiento);
+
+    // 🟠 2. Obtener tanques relacionados
+    final tanques = await supabase
+        .from('tanques')
+        .select()
+        .eq('id_relevamiento', idRelevamiento);
+
+    print('🔎 Tanques obtenidos: $tanques');
+
+    for (final tanque in tanques) {
+      final tipoTanque = tanque['tipo_tanque']; // 'cisterna' o 'reserva'
+      final tipoEstructura = tanque['tipo_estructura']; // 'cilindrico', 'concreto', etc.
+
+      if (tipoEstructura == 'no_tiene' || tanque['id_formulario_detalle'] == null) {
+        print('⏩ Ignorando tanque sin estructura o sin id_formulario_detalle: $tipoTanque');
+        continue;
+      }
+
+      final int idTanque = tanque['id_tanque'];
+      final int idDetalle = tanque['id_formulario_detalle'];
+
+      // 🟠 3. Actualizar datos del formulario correspondiente
+      Map<String, dynamic> detalleMap = {};
+      String tablaDetalle = '';
+
+      if (tipoEstructura == 'cilindrico') {
+        tablaDetalle = 'tanque_cilindrico';
+        detalleMap = {
+          'cantidad': datos['${tipoTanque}_cantidad'],
+          'litros': datos['${tipoTanque}_litros'],
+          'observaciones': datos['${tipoTanque}_observaciones'],
+        };
+      } else if (tipoEstructura == 'concreto') {
+        tablaDetalle = tipoTanque == 'cisterna' ? 'cisterna_concreto' : 'reserva_concreto';
+        detalleMap = {
+          'largo': datos['${tipoTanque}_largo'],
+          'ancho': datos['${tipoTanque}_ancho'],
+          'alto': datos['${tipoTanque}_alto'],
+          'observaciones': datos['${tipoTanque}_observaciones'],
+        };
+
+        if (tipoTanque == 'cisterna') {
+          detalleMap.addAll({
+            'medida_flotante': datos['${tipoTanque}_medida_flotante'],
+            'pozo_achique': datos['${tipoTanque}_pozo_achique'],
+            'bomba_achique': datos['${tipoTanque}_bomba_achique'],
+            'llave_cierre': datos['${tipoTanque}_llave_cierre'],
+          });
+        } else if (tipoTanque == 'reserva') {
+          detalleMap.addAll({
+            'automatico': datos['${tipoTanque}_automatico'],
+          });
+        }
+      }
+
+      if (tablaDetalle.isNotEmpty) {
+        await supabase.from(tablaDetalle).update(detalleMap).eq('id_detalle', idDetalle);
+      }
+
+      // 🟠 4. Eliminar fotos del tanque UNA SOLA VEZ
+      await eliminarFotosDeTanque(idTanque);
+
+      // 🟠 5. Subir nuevas fotos por campo usando función reutilizable
+      for (final entry in datos.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      if (value is List<XFile> && key.startsWith('${tipoTanque}_')) {
+        final campoAsociado = key.replaceFirst('${tipoTanque}_', '');
+
+        await subirFotosDeCampo(
+          fotos: value,
+          campoAsociado: campoAsociado,
+          idTanque: idTanque,
+        );
+      }
+    }
+    }
+  } catch (e) {
+    print('⚠️ Error actualizando relevamiento: $e');
+    rethrow;
+  }
+}
+
+Future<void> eliminarFotosDeTanque(int idTanque) async {
+  final supabase = Supabase.instance.client;
+
+  try {
+    final fotos = await supabase
+        .from('fotos')
+        .select()
+        .eq('id_tanque', idTanque);
+
+    if (fotos.isEmpty) return;
+
+    final List<String> paths = fotos.map<String>((foto) {
+      final url = foto['url_foto'] as String;
+      final bucketName = 'tanques';
+      return url.split('$bucketName/').last;
+    }).toList();
+
+    await supabase.storage.from('tanques').remove(paths);
+    await supabase.from('fotos').delete().eq('id_tanque', idTanque);
+
+    print('🗑️ Fotos eliminadas para tanque $idTanque');
+  } catch (e) {
+    print('⚠️ Error eliminando fotos del tanque $idTanque: $e');
+  }
+}
 }
