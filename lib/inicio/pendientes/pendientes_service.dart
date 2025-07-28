@@ -150,7 +150,9 @@ class PendientesService {
   // 🔹 Versión original que devuelve textos y fotos en URLs
   Map<String, dynamic> transformarRelevamientoAFormularioPlano(Map<String, dynamic> relevamiento) {
     final Map<String, dynamic> datos = {};
-
+    datos['fecha'] = relevamiento['fecha'];
+    datos['hora'] = relevamiento['hora']?.toString().split('.').first ?? '';
+    
     datos['direccion'] = relevamiento['direccion'];
     datos['tecnico'] = relevamiento['tecnico'];
     datos['encargado'] = relevamiento['encargado'];

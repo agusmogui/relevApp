@@ -176,6 +176,7 @@ class TanqueAguaService {
         };
 
         await supabase.from('fotos').insert(fotoMap);
+        print('📤 Subiendo ${fotos.length} fotos para campo: "$campoAsociado", idTanque: $idTanque');
       } catch (e) {
         print('Error subiendo foto "$campoAsociado": $e');
       }
@@ -435,25 +436,34 @@ Future<void> actualizarRelevamiento(Map<String, dynamic> datos) async {
 
       // 🟠 5. Subir nuevas fotos por campo usando función reutilizable
       for (final entry in datos.entries) {
-      final key = entry.key;
-      final value = entry.value;
+        final key = entry.key;
+        final value = entry.value;
 
-      if (value is List<XFile> && key.startsWith('${tipoTanque}_')) {
-        final campoAsociado = key.replaceFirst('${tipoTanque}_', '');
+        if (key.startsWith('${tipoTanque}_')) {
+          List<XFile> fotos = [];
 
-        await subirFotosDeCampo(
-          fotos: value,
-          campoAsociado: campoAsociado,
-          idTanque: idTanque,
-        );
+          if (value is List<String>) {
+            fotos = value.map((e) => XFile(e)).toList();
+          } else if (value is List<XFile>) {
+            fotos = value;
+          }
+
+          if (fotos.isNotEmpty) {
+            await subirFotosDeCampo(
+              fotos: fotos,
+              campoAsociado: key,
+              idTanque: idTanque,
+            );
+          }
+        }
       }
-    }
     }
   } catch (e) {
     print('⚠️ Error actualizando relevamiento: $e');
     rethrow;
   }
 }
+
 
 Future<void> eliminarFotosDeTanque(int idTanque) async {
   final supabase = Supabase.instance.client;

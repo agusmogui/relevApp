@@ -69,45 +69,72 @@ class _DialogoFirmaEncargadoState extends State<DialogoFirmaEncargado> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Firma del encargado'),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 320,
-        child: Column(
-          children: [
-            Expanded(
-              child: Signature(
-                controller: _firmaController,
-                backgroundColor: Colors.grey[300]!,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+Widget build(BuildContext context) {
+  final size = MediaQuery.of(context).size;
+
+  return Stack(
+    children: [
+      Dialog(
+        insetPadding: const EdgeInsets.all(20), // margen desde los bordes
+        child: SizedBox(
+          width: size.width * 0.9,   // 90% del ancho de pantalla
+          height: size.height * 0.85, // 85% del alto de pantalla
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               children: [
-                OutlinedButton(
-                  onPressed: _firmaController.clear,
-                  child: const Text('Reintentar'),
+                const Text(
+                  'Firma del encargado',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                ElevatedButton(
-                  onPressed: _subiendo || _procesandoTodo ? null : _subirYProcesar,
-                  child: _subiendo
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Enviar'),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: Signature(
+                    controller: _firmaController,
+                    backgroundColor: Colors.grey[300]!,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    OutlinedButton(
+                      onPressed: _firmaController.clear,
+                      child: const Text('Reintentar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: _subiendo || _procesandoTodo ? null : _subirYProcesar,
+                      child: _subiendo
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Enviar'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _subiendo || _procesandoTodo ? null : () => Navigator.pop(context, false),
+                    child: const Text('Cancelar'),
+                  ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _subiendo || _procesandoTodo ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
+
+      // Overlay de carga
+      if (_procesandoTodo)
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withOpacity(0.4),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
         ),
-      ],
-    );
-  }
+    ],
+  );
+}
 }

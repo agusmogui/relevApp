@@ -54,7 +54,6 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
   @override
   void initState() {
     super.initState();
-
     final datos = widget.datosPrevios;
     if (datos != null) {
       _tecnicoController.text = datos['tecnico'] ?? '';
@@ -129,7 +128,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                             });
                           },
                           obligatorio: true,
-                          enabled: widget.datosPrevios == null, // 👈 aquí desactivamos en edición
+                          enabled: widget.datosPrevios == null,
                         ),
                         const SizedBox(height: 10),
                         if (_tipoCisterna == 'cilindrico')
@@ -164,7 +163,7 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                             });
                           },
                           obligatorio: true,
-                          enabled: widget.datosPrevios == null, // 👈 aquí desactivamos en edición
+                          enabled: widget.datosPrevios == null,
                         ),
                         const SizedBox(height: 10),
                         if (_tipoReserva == 'cilindrico')
@@ -197,40 +196,58 @@ class _TanquesDeAguaScreenState extends State<TanquesDeAguaScreen> {
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                       onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          datosFormulario['tecnico'] = _tecnicoController.text;
-                          datosFormulario['direccion'] = _direccionController.text;
-                          datosFormulario['administracion'] = _administracionController.text;
-                          datosFormulario['encargado'] = _encargadoController.text;
-                          datosFormulario['contacto'] = _contactoController.text;
-                          datosFormulario['tipo_cisterna'] = _tipoCisterna;
-                          datosFormulario['tipo_reserva'] = _tipoReserva;
+                      if (_formKey.currentState!.validate()) {
+                        datosFormulario['tecnico'] = _tecnicoController.text;
+                        datosFormulario['direccion'] = _direccionController.text;
+                        datosFormulario['administracion'] = _administracionController.text;
+                        datosFormulario['encargado'] = _encargadoController.text;
+                        datosFormulario['contacto'] = _contactoController.text;
+                        datosFormulario['tipo_cisterna'] = _tipoCisterna;
+                        datosFormulario['tipo_reserva'] = _tipoReserva;
 
-                          if (widget.datosPrevios != null) {
-                            // 🟡 Modo edición → actualiza en Supabase directamente
-                          
-                            // ✅ Agregar el id_relevamiento directamente al formulario
-                            datosFormulario['id_relevamiento'] = widget.datosPrevios!['id_relevamiento'];
-                            datosFormulario['id_empresa'] = widget.datosPrevios!['id_empresa']; // por si lo necesita el update
+                        if (widget.datosPrevios != null) {
+                          // Modo edición: mostrar loader modal
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
 
+                          datosFormulario['id_relevamiento'] = widget.datosPrevios!['id_relevamiento'];
+                          datosFormulario['id_empresa'] = widget.datosPrevios!['id_empresa'];
 
-                            final service = TanqueAguaService(datosFormulario);
+                          final service = TanqueAguaService(datosFormulario);
+
+                          try {
                             await service.actualizarRelevamiento(datosFormulario);
+                            if (!mounted) return;
 
-                            if (context.mounted) Navigator.pop(context); // volver atrás si fue exitoso
+                            Navigator.pop(context); // Cierra el diálogo de carga
+                            Navigator.pop(context); // Vuelve atrás
+                          } catch (e) {
+                            Navigator.pop(context); // Cierra el diálogo de carga en caso de error
 
-                          } else {
-                            // 🟢 Modo nuevo → ir a firmar
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (BuildContext context) {
-                                return DialogoFirmaEncargado(formulario: datosFormulario);
-                              },
-                            );
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error al actualizar: $e')),
+                              );
+                            }
                           }
+                        } else {
+                          // Modo nuevo → ir a firmar, igual que antes
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return DialogoFirmaEncargado(formulario: datosFormulario);
+                            },
+                          );
                         }
-                      },
+                      }
+                    },
+
                     ),
 
                       SizedBox(height: MediaQuery.of(context).viewPadding.bottom + 24),

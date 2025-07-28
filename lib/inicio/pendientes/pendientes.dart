@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pendientes_service.dart';
 import '../../formularios/tanque_de_agua/interfaz_y_service/tanques_de_agua.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'pdfGenerator.dart';
 
 
 class Pendientes extends StatefulWidget {
@@ -166,101 +166,145 @@ Future<void> _mostrarDialogoContrasena() async {
               ),
             ),
           ),
-
-
             ...relevamientos.map((r) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Card(
-                    child: InkWell(
-                      onTap: () async {
-                      final idFormulario = r['id_formulario'];
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Card(
+                child: InkWell(
+                  onTap: () async {
+                    final idFormulario = r['id_formulario'];
 
-                      if (idFormulario == 1) {
-                        final idRelevamiento = r['id_relevamiento'];
+                    if (idFormulario == 1) {
+                      final idRelevamiento = r['id_relevamiento'];
 
-                        // 🔄 Mostrar loader animado
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => Center(
-                            child: SpinKitFadingCircle( // o el que más te guste
-                              color: Colors.greenAccent,
-                              size: 60.0,
-                            ),
-                          ),
+                      // Mostrar loader
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Center(child: CircularProgressIndicator()),
+                      );
+
+                      final service = PendientesService();
+                      final relevamientoCompleto = await service.obtenerRelevamientoCompleto(idRelevamiento);
+
+                      if (!mounted) {
+                        Navigator.pop(context);
+                        return;
+                      }
+
+                      if (relevamientoCompleto == null) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
                         );
+                        return;
+                      }
 
-                        final service = PendientesService();
-                        final relevamientoCompleto = await service.obtenerRelevamientoCompleto(idRelevamiento);
+                      try {
+                        final datosPlano = await service.transformarRelevamientoConFotos(relevamientoCompleto);
+                        datosPlano['id_relevamiento'] = idRelevamiento;
+                        datosPlano['id_empresa'] = widget.empresa['id_empresa'];
 
-                        if (!mounted) return;
-                        Navigator.pop(context); // ❌ Cerrar loader
-
-                        if (relevamientoCompleto == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('No se pudo cargar el relevamiento completo')),
-                          );
+                        if (!mounted) {
+                          Navigator.pop(context);
                           return;
                         }
 
-                        try {
-                          final datosPlano = await service.transformarRelevamientoConFotos(relevamientoCompleto);
-                          datosPlano['id_relevamiento'] = idRelevamiento;
-                          datosPlano['id_empresa'] = widget.empresa['id_empresa'];
+                        Navigator.pop(context);
 
-                          if (!mounted) return;
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TanquesDeAguaScreen(
-                                empresa: widget.empresa,
-                                datosPrevios: datosPlano,
-                              ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TanquesDeAguaScreen(
+                              empresa: widget.empresa,
+                              datosPrevios: datosPlano,
                             ),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error procesando las fotos: $e')),
-                          );
-                        }
-                      } else {
+                          ),
+                        );
+                      } catch (e) {
+                        Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Este formulario aún no está implementado')),
+                          SnackBar(content: Text('Error procesando las fotos: $e')),
                         );
                       }
-                    },
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Este formulario aún no está implementado')),
+                      );
+                    }
+                  },
+                  child: Padding(
+  padding: const EdgeInsets.all(12),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              r['direccion'] ?? 'Dirección desconocida',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text('Fecha: ${r['fecha'] ?? 'sin fecha'}'),
+            Text('Técnico: ${r['tecnico'] ?? 'sin técnico'}'),
+          ],
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+        onPressed: () async {
+          // Mostramos el loader
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const Center(child: CircularProgressIndicator()),
+          );
 
+          try {
+            final idRelevamiento = r['id_relevamiento'];
+            final service = PendientesService();
+            final datos = await service.obtenerRelevamientoCompleto(idRelevamiento);
+            print(datos);
 
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    r['direccion'] ?? 'Dirección desconocida',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text('Fecha: ${r['fecha'] ?? 'sin fecha'}'),
-                                  Text('Técnico: ${r['tecnico'] ?? 'sin técnico'}'),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                )),
+            if (datos != null) {
+              final datosPlano = await service.transformarRelevamientoConFotos(datos);
+              print(datosPlano);
+              await PdfGenerator.generarPdf(
+                datos: datosPlano,
+                logoPathLocal: widget.empresa['logo_url'] ?? '',
+                nombreRelevamiento: r['descripcion_formulario'] ?? 'Relevamiento',
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No se pudo cargar el relevamiento para exportar')),
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error al generar el PDF: $e')),
+            );
+          } finally {
+            // Cerramos el loader
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
+          }
+        },
+        tooltip: 'Exportar como PDF',
+      ),
+      const Icon(Icons.chevron_right),
+    ],
+  ),
+),
+
+                ),
+              ),
+            )),
+
             const SizedBox(height: 8),
           ],
         );
