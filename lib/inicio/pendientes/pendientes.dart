@@ -268,15 +268,16 @@ Future<void> _mostrarDialogoContrasena() async {
             final idRelevamiento = r['id_relevamiento'];
             final service = PendientesService();
             final datos = await service.obtenerRelevamientoCompleto(idRelevamiento);
-            print(datos);
 
             if (datos != null) {
               final datosPlano = await service.transformarRelevamientoConFotos(datos);
+              print('datos que le paso a la funcion:');
               print(datosPlano);
-              await PdfGenerator.generarPdf(
+              await PdfGenerator.generarPdfDesdeUrlLogo(
                 datos: datosPlano,
-                logoPathLocal: widget.empresa['logo_url'] ?? '',
+                logoUrl: widget.empresa['logo_empresa'] ?? '',
                 nombreRelevamiento: r['descripcion_formulario'] ?? 'Relevamiento',
+                nombreEmpresa : widget.empresa['nombre_empresa'],
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
